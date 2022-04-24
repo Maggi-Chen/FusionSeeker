@@ -1,0 +1,157 @@
+#!/usr/bin/python
+
+import construct_gtf
+import raw_signal
+import cluster
+import pysam
+import os
+import multiprocessing
+import argparse
+import poa 
+import gzip
+
+
+parser=argparse.ArgumentParser(description='Gene fusion caller for long-read sequencing data', usage='fusionseeker [-h] --bam <sort.bam>')
+parser.add_argument('-v','--version', action='version', version='FusionSeeker v1.0.1')
+parser.add_argument('--bam',type=str,default=False,required=True,help='Input sorted BAM. index required')
+parser.add_argument('--datatype',type=str,default=False,help='Input read type. (isoseq, nanopore) [nanopore]')
+parser.add_argument('--gtf',type=str,default=False,help='Genome annotation file')
+parser.add_argument('--ref',type=str,default=None,help='Reference genome. Required for breakpoint polishing.')
+parser.add_argument('--geneid',action='store_true',default=False,help='Use Gene ID instead of Gene name. [False]')
+parser.add_argument('--human38',action='store_true',default=False,help='Use reference genome and GTF for Human GCRh38. (default)')
+parser.add_argument('--human19',action='store_true',default=False,help='Use reference genome and GTF for Human GCRh37.')
+
+
+parser.add_argument('-o','--outpath',type=str,default='./fusionseeker_out/',help='Output directory [./fusionseeker_out/]')
+parser.add_argument('-s','--minsupp',type=int,default=None,help='Minimal reads supporting an event [auto]')
+
+parser.add_argument('--maxdistance',type=int,default=False,help='Maximal distance to cluster raw signals. [20 for isoseq, 40 for nanopore]')
+parser.add_argument('--keepfile',action='store_true',default=False,help='Keep intermediate files [False].')
+parser.add_argument('--thread',type=int,default=8,help='Number of threads [8].')
+
+
+defusion_args=parser.parse_args()
+if defusion_args.outpath[-1]!='/':
+	defusion_args.outpath+='/'
+if not os.path.exists(defusion_args.outpath):
+	os.mkdir(defusion_args.outpath)
+
+logfile=open(defusion_args.outpath+'log.txt','a')
+logfile.write('Start calling gene fusions from '+defusion_args.bam+'...\n')
+logfile.close()
+
+
+if defusion_args.datatype not in ['isoseq','nanopore']:
+	logfile=open(defusion_args.outpath+'log.txt','a')
+	logfile.write('Warning: --datatype has to be one of the following: isoseq, nanopore. Using nanopore by default.\n')
+	logfile.close()
+	defusion_args.datatype='nanopore'
+
+if not defusion_args.maxdistance:
+	if defusion_args.datatype == 'isoseq':
+		defusion_args.maxdistance=20
+	else:
+		defusion_args.maxdistance=40
+
+
+
+bamfile=pysam.AlignmentFile(defusion_args.bam,'rb')
+bamchrom=bamfile.references
+
+if not defusion_args.gtf:
+	if defusion_args.human19:
+		defusion_args.gtf='Homo_sapiens.GRCh37.87.chrname.gtf.gz'
+	else:
+		defusion_args.gtf='Homo_sapiens.GRCh38.104.chrname.gtf.gz'
+
+try:
+	gtfinfo=gzip.open(defusion_args.gtf,'rb').read().split('\n')[:-1]
+except:
+	gtfinfo=open(defusion_args.gtf,'rb').read().split('\n')[:-1]
+
+
+gtfinfo=[c for c in gtfinfo if c[0]!='#']
+allchrom=list(set([c.split('\t')[0] for c in gtfinfo]))
+
+
+goodchrom=[c for c in allchrom if c in bamchrom]
+badchrom=[c for c in allchrom if c not in bamchrom]
+if len(badchrom)>0:
+	logfile=open(defusion_args.outpath+'log.txt','a')
+	logfile.write('Warning: Following chromosomes are not in BAM file, skipping '+';'.join(badchrom)+'\n')
+	logfile.close()
+if len(goodchrom)==0:
+	logfile=open(defusion_args.outpath+'log.txt','a')
+	logfile.write('Error: None of the chromosomes from GTF file are present in BAM. Check if chromosome names match between BAM and GTF. Abort.\n')
+	logfile.close()
+	quit()
+
+geneinfo=construct_gtf.create(gtfinfo,goodchrom,defusion_args.geneid)
+
+raw_signal.geneinfo=geneinfo
+os.system('mkdir '+defusion_args.outpath+'raw_signal/')
+defusion_det=multiprocessing.Pool(defusion_args.thread)
+
+for chrom in goodchrom:
+	defusion_det.apply_async(raw_signal.get_raw_signal,args=(defusion_args.bam,defusion_args.outpath,chrom,))
+
+defusion_det.close()
+defusion_det.join()
+
+raw_signal.detect_from_split(defusion_args.outpath,goodchrom)
+
+logfile=open(defusion_args.outpath+'log.txt','a')
+logfile.write('Raw signal detection done. Start clustering raw signals...\n')
+logfile.close()
+
+cluster.cluster_bp(defusion_args.outpath,defusion_args.maxdistance,defusion_args.minsupp)
+
+logfile=open(defusion_args.outpath+'log.txt','a')
+logfile.write('Raw signal clustering done. Start transcript sequence generation...\n')
+logfile.close()
+
+poa.geneinfo=geneinfo
+poa.poa_all(defusion_args.outpath,goodchrom)
+if defusion_args.ref:
+	poa.polish_bp(defusion_args.outpath,goodchrom,defusion_args.ref,defusion_args.datatype)
+	logfile=open(defusion_args.outpath+'log.txt','a')
+	logfile.write('Transcript sequence generation done. Start polishing gene fusion breakpoints...\n')
+	logfile.close()
+else:
+	logfile=open(defusion_args.outpath+'log.txt','a')
+	logfile.write('Transcript sequence generation done.\nWarning: No reference genome provided. Skipping breakpoint polish. (To enable breakpoint polish, please provide reference genome file.)\n')
+	logfile.close()
+
+
+allgf=open(defusion_args.outpath+'confident_genefusion.txt','r').read().split('\n')[:-1]
+f=open(defusion_args.outpath+'confident_genefusion.txt','w')
+badgf=[]
+for candi in allgf:
+	if candi.split('\t')[1].split('-AS')[0]==candi.split('\t')[2] or candi.split('\t')[2].split('-AS')[0]==candi.split('\t')[1]:
+		badgf+=[candi.split('\t')[0]]
+	else:
+		f.write(candi+'\n')
+f.close()
+if badgf!=[]:
+	allgfseq=open(defusion_args.outpath+'confident_genefusion_transcript_sequence.fa','r').read().split('>')[1:]
+	f=open(defusion_args.outpath+'confident_genefusion_transcript_sequence.fa','w')
+	for candiseq in allgfseq:
+		if candiseq.split('_')[0] not in badgf:
+			f.write('>'+candiseq)
+	f.close()
+
+logfile=open(defusion_args.outpath+'log.txt','a')
+logfile.write('Transcript sequence generation done.\n')
+logfile.close()
+
+
+if not defusion_args.keepfile:
+	os.system('rm -r '+defusion_args.outpath+'poa_workspace/')
+	os.system('rm -r '+defusion_args.outpath+'raw_signal/')
+	os.system('rm '+defusion_args.outpath+'confident_genefusion_all.txt')
+	logfile=open(defusion_args.outpath+'log.txt','a')
+	logfile.write('Intermediate files removed.\n')
+	logfile.close()
+
+logfile=open(defusion_args.outpath+'log.txt','a')
+logfile.write('Gene fusion detection done. Bye.\n')
