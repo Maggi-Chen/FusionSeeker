@@ -38,30 +38,31 @@ Dependencies for FusionSeeker:
 * python3
 * pysam  (tested with version 0.17.0)
 * minimap2  (tested with version 2.24)
-* bsalign  (tested with version 2.5)
+* bsalign  (tested with version 1.2.1)
 
 
 
 ## Installation
 
 ```
-git clone https://github.com/Maggi-Chen/DeBreak.git
+git clone https://github.com/Maggi-Chen/FusionSeeker.git
 ```
 Then, please also add this directory to your PATH:
 ```
-export PATH=$PWD/DeBreak/:$PATH
+export PATH=$PWD/FusionSeeker/:$PATH
 ```
 
 
 To simplify the environment setup process, Anaconda2 (https://www.anaconda.com/) is recommended.
 To create an environment with conda:
 ```
-conda create --name deb python=2.7
-conda activate deb
-conda install -c bioconda minimap2=2.15
+conda create --name fusions
+conda activate fusions
+conda install -c bioconda minimap2=2.24
 conda install -c bioconda samtools=1.9
-conda install -c bioconda pysam=0.16.0.1
-conda install -c bioconda wtdbg=2.5
+conda install -c bioconda pysam=0.17
+
+
 
 ```
 
