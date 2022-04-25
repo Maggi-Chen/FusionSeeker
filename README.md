@@ -53,14 +53,11 @@ export PATH=$PWD/FusionSeeker/:$PATH
 ```
 
 
-To simplify the environment setup process, Anaconda2 (https://www.anaconda.com/) is recommended.
-To create an environment with conda:
+To simplify the environment setup process, Anaconda2 (https://www.anaconda.com/) is recommended:
 ```
 conda create --name fusions
 conda activate fusions
-conda install -c bioconda minimap2=2.24
-conda install -c bioconda pysam=0.17
-conda install -c bioconda samtools=1.9
+conda install -c bioconda minimap2=2.24 pysam=0.17 samtools=1.9 -y
 git clone https://github.com/ruanjue/bsalign.git
 cd bsalign && make
 export PATH=$PWD:$PATH
