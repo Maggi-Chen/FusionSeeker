@@ -14,20 +14,20 @@ import gzip
 parser=argparse.ArgumentParser(description='Gene fusion caller for long-read sequencing data', usage='fusionseeker [-h] --bam <sort.bam>')
 parser.add_argument('-v','--version', action='version', version='FusionSeeker v1.0.1')
 parser.add_argument('--bam',type=str,default=False,required=True,help='Input sorted BAM. index required')
-parser.add_argument('--datatype',type=str,default=False,help='Input read type. (isoseq, nanopore) [nanopore]')
+parser.add_argument('--datatype',type=str,default=False,help='Input read type (isoseq, nanopore) [nanopore]')
 parser.add_argument('--gtf',type=str,default=False,help='Genome annotation file')
-parser.add_argument('--ref',type=str,default=None,help='Reference genome. Required for breakpoint polishing.')
-parser.add_argument('--geneid',action='store_true',default=False,help='Use Gene ID instead of Gene name. [False]')
-parser.add_argument('--human38',action='store_true',default=False,help='Use reference genome and GTF for Human GCRh38. (default)')
-parser.add_argument('--human19',action='store_true',default=False,help='Use reference genome and GTF for Human GCRh37.')
+parser.add_argument('--ref',type=str,default=None,help='Reference genome. Required for breakpoint polishing')
+parser.add_argument('--geneid',action='store_true',default=False,help='Use Gene ID instead of Gene name [False]')
+parser.add_argument('--human38',action='store_true',default=False,help='Use reference genome and GTF for Human GCRh38 (default)')
+parser.add_argument('--human19',action='store_true',default=False,help='Use reference genome and GTF for Human GCRh37')
 
 
 parser.add_argument('-o','--outpath',type=str,default='./fusionseeker_out/',help='Output directory [./fusionseeker_out/]')
 parser.add_argument('-s','--minsupp',type=int,default=None,help='Minimal reads supporting an event [auto]')
 
-parser.add_argument('--maxdistance',type=int,default=False,help='Maximal distance to cluster raw signals. [20 for isoseq, 40 for nanopore]')
-parser.add_argument('--keepfile',action='store_true',default=False,help='Keep intermediate files [False].')
-parser.add_argument('--thread',type=int,default=8,help='Number of threads [8].')
+parser.add_argument('--maxdistance',type=int,default=False,help='Maximal distance to cluster raw signals [20 for isoseq, 40 for nanopore]')
+parser.add_argument('--keepfile',action='store_true',default=False,help='Keep intermediate files [False]')
+parser.add_argument('--thread',type=int,default=8,help='Number of threads [8]')
 
 
 defusion_args=parser.parse_args()
@@ -60,9 +60,9 @@ bamchrom=bamfile.references
 
 if not defusion_args.gtf:
 	if defusion_args.human19:
-		defusion_args.gtf='Homo_sapiens.GRCh37.87.chrname.gtf.gz'
+		defusion_args.gtf=os.path.dirname(__file__)+'/Homo_sapiens.GRCh37.87.chrname.gtf.gz'
 	else:
-		defusion_args.gtf='Homo_sapiens.GRCh38.104.chrname.gtf.gz'
+		defusion_args.gtf=os.path.dirname(__file__)+'/Homo_sapiens.GRCh38.104.chrname.gtf.gz'
 
 try:
 	gtfinfo=gzip.open(defusion_args.gtf,'rb').read().split('\n')[:-1]
@@ -113,11 +113,12 @@ logfile.close()
 poa.geneinfo=geneinfo
 poa.poa_all(defusion_args.outpath,goodchrom)
 if defusion_args.ref:
-	poa.polish_bp(defusion_args.outpath,goodchrom,defusion_args.ref,defusion_args.datatype)
+	poa.polish_bp(defusion_args.outpath,goodchrom,defusion_args.ref,defusion_args.datatype,True)
 	logfile=open(defusion_args.outpath+'log.txt','a')
 	logfile.write('Transcript sequence generation done. Start polishing gene fusion breakpoints...\n')
 	logfile.close()
 else:
+	poa.polish_bp(defusion_args.outpath,goodchrom,defusion_args.ref,defusion_args.datatype,False)
 	logfile=open(defusion_args.outpath+'log.txt','a')
 	logfile.write('Transcript sequence generation done.\nWarning: No reference genome provided. Skipping breakpoint polish. (To enable breakpoint polish, please provide reference genome file.)\n')
 	logfile.close()

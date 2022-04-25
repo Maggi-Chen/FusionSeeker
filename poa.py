@@ -42,34 +42,37 @@ def poa_all(outpath,goodchrom):
 
 	return 0
 
-def polish_bp(outpath,goodchrom,reference,datatype):
+def polish_bp(outpath,goodchrom,reference,datatype,polishbp):
 	raw_signal.geneinfo=geneinfo
-	
-	if datatype=='isoseq':	
-		os.system('minimap2 -ax splice:hq '+reference+' --secondary=no '+outpath+'poa_workspace/allpoaseq.fa | samtools sort -o '+outpath+'poa_workspace/allpoaseq.bam')
-	else:
-		os.system('minimap2 -ax splice '+reference+' --secondary=no '+outpath+'poa_workspace/allpoaseq.fa | samtools sort -o '+outpath+'poa_workspace/allpoaseq.bam')
 
-	os.system('samtools index '+outpath+'poa_workspace/allpoaseq.bam')
-	os.system('mkdir '+outpath+'poa_workspace/raw_signal/')
-	for chrom in goodchrom:
-		raw_signal.get_raw_signal(outpath+'poa_workspace/allpoaseq.bam',outpath+'poa_workspace/',chrom,recordseq=False)
-	raw_signal.detect_from_split(outpath+'poa_workspace/',goodchrom)
-	
-	goodpos=open(outpath+'poa_workspace/rawsignal.txt','r').read().split('\n')[:-1]
+
 	allgf=open(outpath+'confident_genefusion.txt').read().split('\n')[:-1]
-
 	gfinfo={}
 	for gfeve in allgf:
 		event=gfeve.split('\t')
 		gfinfo[event[7]+'_'+event[0]+'_'+event[1]+'_'+event[4]+'_'+event[6]]=gfeve
 
-	for goodgf in goodpos:
-		goodgf=goodgf.split('\t')
-		if goodgf[0]==goodgf[7].split('_')[3] and goodgf[1]==goodgf[7].split('_')[4] :
-			oldinfo=gfinfo[goodgf[7][8:]].split('\t')
-			newinfo=goodgf[0]+'\t'+goodgf[1]+'\t'+oldinfo[2]+'\t'+goodgf[3]+'\t'+goodgf[4]+'\t'+goodgf[5]+'\t'+goodgf[6]+'\t'+oldinfo[7]+'\t'+oldinfo[8]
-			gfinfo[goodgf[7][8:]]=newinfo
+
+	if polishbp:	
+		if datatype=='isoseq':	
+			os.system('minimap2 -ax splice:hq '+reference+' --secondary=no '+outpath+'poa_workspace/allpoaseq.fa | samtools sort -o '+outpath+'poa_workspace/allpoaseq.bam')
+		else:
+			os.system('minimap2 -ax splice '+reference+' --secondary=no '+outpath+'poa_workspace/allpoaseq.fa | samtools sort -o '+outpath+'poa_workspace/allpoaseq.bam')
+	
+		os.system('samtools index '+outpath+'poa_workspace/allpoaseq.bam')
+		os.system('mkdir '+outpath+'poa_workspace/raw_signal/')
+		for chrom in goodchrom:
+			raw_signal.get_raw_signal(outpath+'poa_workspace/allpoaseq.bam',outpath+'poa_workspace/',chrom,recordseq=False)
+		raw_signal.detect_from_split(outpath+'poa_workspace/',goodchrom)
+		
+		goodpos=open(outpath+'poa_workspace/rawsignal.txt','r').read().split('\n')[:-1]
+
+		for goodgf in goodpos:
+			goodgf=goodgf.split('\t')
+			if goodgf[0]==goodgf[7].split('_')[3] and goodgf[1]==goodgf[7].split('_')[4] :
+				oldinfo=gfinfo[goodgf[7][8:]].split('\t')
+				newinfo=goodgf[0]+'\t'+goodgf[1]+'\t'+oldinfo[2]+'\t'+goodgf[3]+'\t'+goodgf[4]+'\t'+goodgf[5]+'\t'+goodgf[6]+'\t'+oldinfo[7]+'\t'+oldinfo[8]
+				gfinfo[goodgf[7][8:]]=newinfo
 
 	mergedgf=[]
 	for gf in gfinfo:
