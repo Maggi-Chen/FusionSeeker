@@ -55,7 +55,7 @@ export PATH=$PWD/FusionSeeker/:$PATH
 
 To simplify the environment setup process, Anaconda2 (https://www.anaconda.com/) is recommended:
 ```
-conda create --name fusions
+conda create --name fusions -y
 conda activate fusions
 conda install -c bioconda minimap2=2.24 pysam=0.17 samtools=1.9 -y
 git clone https://github.com/ruanjue/bsalign.git
@@ -162,8 +162,8 @@ confident_genefusion_transcript_sequence.fa    Transcript sequences of reported 
 clustered_candidate.txt                        A full list of gene fusion candidates before applying filters.
 rawsignal.txt                                  A list of all gene fusion raw signals.
 log.txt                                        Log file for debug.
-raw_signal/                                    Intermediate files during raw signal detection. Removed by default.
-poa_workspace/                                 Intermediate files during transcript sequence generation with POA. Removed by default.
+(raw_signal/                                   Intermediate files during raw signal detection. Removed by default.)
+(poa_workspace/                                Intermediate files during transcript sequence generation with POA. Removed by default.)
 ```
 
 
