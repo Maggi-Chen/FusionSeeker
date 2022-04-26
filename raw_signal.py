@@ -187,7 +187,6 @@ def get_raw_signal(bampath,outpath,chrom,recordseq=True):
 		cigarinfo=[str(mm) for mm in c[5]]
 		f.write(c[0]+'\t'+str(c[1])+'\t'+str(c[2])+'\t'+c[3]+'\t'+c[4]+'\t'+','.join(cigarinfo)+'\t'+str(c[6])+'\t'+str(c[12])+'\t'+','.join(c[7])+'\t'+','.join(c[8])+'\t'+exoninfo+'\t'+c[13]+'\t'+c[10]+'\t'+c[11]+'\n')
 	f.close()
-	print(chrom)
 	return 0
 
 
