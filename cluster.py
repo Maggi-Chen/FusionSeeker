@@ -58,13 +58,13 @@ def merge_same(samegf,svid):
 	gfchr=samesvinfo[0]
 	bp1=[int(c[4]) for c in samesvinfo]
 	bp2=[int(c[6]) for c in samesvinfo]
-	bp1=int(sum(bp1)/len(samegf))
-	bp2=int(sum(bp2)/len(samegf))
+	bp1=int(int(sum(bp1)/len(samegf)))
+	bp2=int(int(sum(bp2)/len(samegf)))
 	quality=[]
 	allq=[c[8] for c in samesvinfo]
 	for c in allq:
 		quality+=[int(mm) for mm in c.split(',')]
-	quality=int(sum(quality)/len(samegf)/2)
+	quality=int(int(sum(quality)/len(samegf)/2))
 	reads=','.join([c[7] for c in samesvinfo])
 	numsupp=len(set([c[7] for c in samesvinfo]))
 	gfinfo=gfchr[0]+'\t'+gfchr[1]+'\t'+str(numsupp)+'\t'+gfchr[3]+'\t'+str(bp1)+'\t'+gfchr[5]+'\t'+str(bp2)+'\t'+str(quality)+'\t'+reads
@@ -120,8 +120,8 @@ def cluster_same(allinfo,maxdistance,outpath):
 		pos2=[int(c.split('\t')[6]) for c in allinfo]
 		pos1.sort()
 		pos2.sort()
-		pos1=pos1[(len(pos1)-1)/2]*1.0
-		pos2=pos2[(len(pos2)-1)/2]*1.0
+		pos1=pos1[int((len(pos1)-1)/2)]*1.0
+		pos2=pos2[int((len(pos2)-1)/2)]*1.0
 
 
 	distance=[]
@@ -198,7 +198,7 @@ def cluster_bp(outpath,maxdistance,min_supp):
 			genecount[c[1]]=1
 		else:
 			genecount[c[1]]+=1
-	repeating=[c for c in genecount if genecount[c]>=max(6,totalgf/20)]
+	repeating=[c for c in genecount if genecount[c]>=max(6,int(totalgf/20))]
 	mergedgf=[c for c in mergedgf if c.split('\t')[0] not in repeating and c.split('\t')[1] not in repeating ]
 	f=open(outpath+'confident_genefusion.txt','w')
 	idnum=1

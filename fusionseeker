@@ -59,15 +59,18 @@ bamfile=pysam.AlignmentFile(defusion_args.bam,'rb')
 bamchrom=bamfile.references
 
 if not defusion_args.gtf:
+	fusionseekerpath=os.path.dirname(__file__)
+	if fusionseekerpath!='':
+		fusionseekerpath=fusionseekerpath+'/'
 	if defusion_args.human19:
-		defusion_args.gtf=os.path.dirname(__file__)+'/Homo_sapiens.GRCh37.87.chrname.gtf.gz'
+		defusion_args.gtf=fusionseekerpath+'Homo_sapiens.GRCh37.87.chrname.gtf.gz'
 	else:
-		defusion_args.gtf=os.path.dirname(__file__)+'/Homo_sapiens.GRCh38.104.chrname.gtf.gz'
+		defusion_args.gtf=fusionseekerpath+'Homo_sapiens.GRCh38.104.chrname.gtf.gz'
 
 try:
-	gtfinfo=gzip.open(defusion_args.gtf,'rb').read().split('\n')[:-1]
+	gtfinfo=gzip.open(defusion_args.gtf,'rt').read().split('\n')[:-1]
 except:
-	gtfinfo=open(defusion_args.gtf,'rb').read().split('\n')[:-1]
+	gtfinfo=open(defusion_args.gtf,'r').read().split('\n')[:-1]
 
 
 gtfinfo=[c for c in gtfinfo if c[0]!='#']
