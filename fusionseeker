@@ -115,16 +115,23 @@ logfile.close()
 
 poa.geneinfo=geneinfo
 poa.poa_all(defusion_args.outpath,goodchrom)
+logfile=open(defusion_args.outpath+'log.txt','a')
 if defusion_args.ref:
-	poa.polish_bp(defusion_args.outpath,goodchrom,defusion_args.ref,defusion_args.datatype,True)
-	logfile=open(defusion_args.outpath+'log.txt','a')
-	logfile.write('Transcript sequence generation done. Start polishing gene fusion breakpoints...\n')
-	logfile.close()
+    try:
+	    poa.polish_bp(defusion_args.outpath,goodchrom,defusion_args.ref,defusion_args.datatype,True)
+	    logfile.write('Transcript sequence generation done. Start polishing gene fusion breakpoints...\n')
+    except:
+        logfile.write('Warinng: Transcript sequence generation failed.\n')
+        os.system('touch '+defusion_args.outpath+'confident_genefusion_transcript_sequence.fa')
 else:
-	poa.polish_bp(defusion_args.outpath,goodchrom,defusion_args.ref,defusion_args.datatype,False)
-	logfile=open(defusion_args.outpath+'log.txt','a')
-	logfile.write('Transcript sequence generation done.\nWarning: No reference genome provided. Skipping breakpoint polish. (To enable breakpoint polish, please provide reference genome file.)\n')
-	logfile.close()
+    try:
+	    poa.polish_bp(defusion_args.outpath,goodchrom,defusion_args.ref,defusion_args.datatype,False)
+	    logfile.write('Transcript sequence generation done.\nWarning: No reference genome provided. Skipping breakpoint polish. (To enable breakpoint polish, please provide reference genome file.)\n')
+    except:
+        logfile.write('Warinng: Transcript sequence generation failed.\n')
+        os.system('touch '+defusion_args.outpath+'confident_genefusion_transcript_sequence.fa')
+
+logfile.close()
 
 
 allgf=open(defusion_args.outpath+'confident_genefusion.txt','r').read().split('\n')[:-1]
